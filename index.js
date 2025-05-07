@@ -23,19 +23,32 @@ server.listen(PORT, () => {
 const shutdown = () => {
   console.log("Shutting down gracefully...");
 
+  let httpClosed = false;
+  let socketClosed = false;
+
+  const checkShutdownComplete = () => {
+    if (httpClosed && socketClosed) {
+      console.log("Shutdown complete");
+      process.exit(0);
+    }
+  };
+
   server.close(() => {
     console.log("HTTP server closed");
-    process.exit(0);
+    httpClosed = true;
+    checkShutdownComplete();
   });
 
   io.close(() => {
     console.log("Socket.IO server closed");
-    process.exit(0);
+    socketClosed = true;
+    checkShutdownComplete();
   });
 
+  // Safety timeout for forced shutdown
   setTimeout(() => {
     console.error("Forced shutdown");
-    process.exit(1); // failure
+    process.exit(1);
   }, 5000);
 };
 
